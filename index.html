@@ -1,0 +1,958 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Principia Sticker Exchange | 3D Marketplace</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        principia: {
+                            navy: '#00205B',
+                            gold: '#FFC72C',
+                            darkGold: '#D9A300',
+                            slate: '#1E293B',
+                            lightBg: '#F1F5F9',
+                            goldLight: '#FFF4CC'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- Three.js for 3D Carousel & Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #00205B;
+            color: #FFFFFF;
+            overflow-x: hidden;
+        }
+
+        /* 3D Glassmorphism Cards */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .glass-panel-light {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 32, 91, 0.1);
+            box-shadow: 0 15px 35px rgba(0, 32, 91, 0.12);
+        }
+
+        /* 3D Card Hover Tilt Base */
+        .tilt-card {
+            transform-style: preserve-3d;
+            transition: transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s ease;
+        }
+
+        .tilt-content {
+            transform: translateZ(30px);
+        }
+
+        .sticker-diecut {
+            filter: drop-shadow(0px 8px 12px rgba(0,0,0,0.3));
+            transition: all 0.3s ease;
+        }
+
+        .tilt-card:hover .sticker-diecut {
+            filter: drop-shadow(0px 14px 22px rgba(255, 199, 44, 0.4));
+            transform: scale(1.06) rotate(3deg);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #00153D;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #FFC72C;
+            border-radius: 4px;
+        }
+
+        /* Holographic Sticker Effect */
+        .holo-effect {
+            position: relative;
+            overflow: hidden;
+        }
+        .holo-effect::after {
+            content: '';
+            position: absolute;
+            top: -100%;
+            left: -100%;
+            width: 300%;
+            height: 300%;
+            background: linear-gradient(
+                115deg, 
+                transparent 20%, 
+                rgba(255, 255, 255, 0.4) 40%, 
+                rgba(255, 199, 44, 0.5) 50%, 
+                rgba(0, 168, 255, 0.4) 60%, 
+                transparent 80%
+            );
+            transition: transform 0.6s ease;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .tilt-card:hover .holo-effect::after {
+            opacity: 1;
+            transform: translate(35%, 35%);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between selection:bg-principia-gold selection:text-principia-navy">
+
+    <!-- HEADER NAVBAR -->
+    <header class="sticky top-0 z-50 glass-panel border-b border-white/10 bg-principia-navy/80 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="scrollToSection('hero')">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-principia-gold to-yellow-200 flex items-center justify-center text-principia-navy font-black text-2xl shadow-lg shadow-principia-gold/20 transform hover:rotate-6 transition-transform">
+                    P
+                </div>
+                <div>
+                    <span class="text-xl font-black tracking-tight text-white flex items-center gap-1.5">
+                        PRINCIPIA <span class="text-principia-gold">STICKERS</span>
+                    </span>
+                    <p class="text-xs text-blue-200 font-medium tracking-wide">Panther Spirit 3D Exchange</p>
+                </div>
+            </div>
+
+            <!-- Nav Links -->
+            <nav class="hidden md:flex items-center space-x-8 text-sm font-semibold">
+                <a href="#hero" class="text-white hover:text-principia-gold transition-colors">3D Showcase</a>
+                <a href="#buy-section" class="text-white/80 hover:text-principia-gold transition-colors">Buy Stickers</a>
+                <a href="#sell-section" class="text-white/80 hover:text-principia-gold transition-colors">Sell Custom Sticker</a>
+            </nav>
+
+            <!-- Actions (Cart & Sell CTA) -->
+            <div class="flex items-center space-x-4">
+                <a href="#sell-section" class="hidden sm:inline-flex items-center px-4 py-2.5 rounded-full text-xs font-bold bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all">
+                    <i data-lucide="plus-circle" class="w-4 h-4 mr-2 text-principia-gold">="</i> List Your Sticker
+                </a>
+                
+                <!-- Cart Button -->
+                <button id="cart-toggle-btn" class="relative p-3 rounded-full bg-principia-gold text-principia-navy font-bold hover:bg-yellow-400 transition-all shadow-md hover:scale-105 active:scale-95" onclick="toggleCart()">
+                    <i data-lucide="shopping-bag" class="w-5 h-5"></i>
+                    <span id="cart-count-badge" class="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center border-2 border-principia-navy hidden">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- HERO SECTION WITH THREE.JS CANVA -->
+    <section id="hero" class="relative min-h-[85vh] flex items-center justify-center overflow-hidden py-12">
+        <!-- 3D Canvas Background & Interactive Display -->
+        <div id="three-container" class="absolute inset-0 z-0"></div>
+
+        <!-- Floating Hero Content Over Canvas -->
+        <div class="relative z-10 max-w-5xl mx-auto px-4 text-center pointer-events-none">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-principia-gold/20 border border-principia-gold/40 text-principia-gold text-xs font-bold uppercase tracking-wider mb-6 pointer-events-auto shadow-inner backdrop-blur-md">
+                <i data-lucide="sparkles" class="w-4 h-4"></i> Interactive 3D Sticker Hub
+            </div>
+            <h1 class="text-4xl sm:text-6xl md:text-7xl font-black text-white tracking-tight leading-none mb-6 drop-shadow-lg">
+                STICK TO YOUR <br class="hidden sm:inline" />
+                <span class="text-transparent bg-clip-text bg-gradient-to-r from-principia-gold via-yellow-200 to-amber-400">
+                    PRINCIPIA SPIRIT
+                </span>
+            </h1>
+            <p class="max-w-2xl mx-auto text-lg sm:text-xl text-blue-100/90 font-normal mb-8 leading-relaxed pointer-events-auto">
+                Explore, buy, and list custom vinyl stickers. Drag or scroll to rotate stickers in real-time 3D space!
+            </p>
+            <div class="flex flex-wrap items-center justify-center gap-4 pointer-events-auto">
+                <a href="#buy-section" class="px-8 py-4 rounded-xl bg-principia-gold text-principia-navy font-black text-base hover:bg-yellow-300 transition-all shadow-lg hover:shadow-principia-gold/30 hover:-translate-y-1 flex items-center gap-2">
+                    <i data-lucide="shopping-cart" class="w-5 h-5"></i> Browse Collection
+                </a>
+                <a href="#sell-section" class="px-8 py-4 rounded-xl bg-white/10 text-white hover:bg-white/20 font-bold text-base border border-white/20 backdrop-blur-sm transition-all hover:-translate-y-1 flex items-center gap-2">
+                    <i data-lucide="upload-cloud" class="w-5 h-5 text-principia-gold"></i> Sell Custom Design
+                </a>
+            </div>
+        </div>
+
+        <!-- 3D Navigation Controls Overlay -->
+        <div class="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-10 flex items-center gap-3 bg-principia-navy/80 backdrop-blur-md border border-white/20 px-4 py-2 rounded-full">
+            <button id="rotate-left-btn" class="p-2 hover:text-principia-gold text-white transition-colors" title="Rotate Left">
+                <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+            </button>
+            <span class="text-xs font-semibold text-blue-200 uppercase tracking-widest px-2">Drag 3D Model</span>
+            <button id="rotate-right-btn" class="p-2 hover:text-principia-gold text-white transition-colors" title="Rotate Right">
+                <i data-lucide="rotate-cw" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </section>
+
+    <!-- BUY SECTION (STICKER MARKETPLACE) -->
+    <section id="buy-section" class="py-20 bg-principia-lightBg text-slate-900 rounded-t-[2.5rem] relative z-20 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            
+            <!-- Section Header & Filters -->
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+                <div>
+                    <div class="inline-flex items-center gap-1.5 text-principia-navy font-bold text-xs tracking-wider uppercase mb-2">
+                        <i data-lucide="grid" class="w-4 h-4 text-principia-darkGold"></i> Official & Student Marketplace
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-principia-navy tracking-tight">
+                        Explore Sticker Gallery
+                    </h2>
+                </div>
+
+                <!-- Category Filter Buttons -->
+                <div class="flex flex-wrap gap-2" id="category-filters">
+                    <button class="filter-btn active px-4 py-2 rounded-full text-xs font-bold bg-principia-navy text-white shadow-md transition-all" data-category="All">All Stickers</button>
+                    <button class="filter-btn px-4 py-2 rounded-full text-xs font-bold bg-white text-slate-600 hover:bg-slate-200 border border-slate-200 transition-all" data-category="School Spirit">School Spirit</button>
+                    <button class="filter-btn px-4 py-2 rounded-full text-xs font-bold bg-white text-slate-600 hover:bg-slate-200 border border-slate-200 transition-all" data-category="Cool Art">Cool Art</button>
+                    <button class="filter-btn px-4 py-2 rounded-full text-xs font-bold bg-white text-slate-600 hover:bg-slate-200 border border-slate-200 transition-all" data-category="Cute Animals">Cute Animals</button>
+                    <button class="filter-btn px-4 py-2 rounded-full text-xs font-bold bg-white text-slate-600 hover:bg-slate-200 border border-slate-200 transition-all" data-category="Funny Quotes">Funny Quotes</button>
+                </div>
+            </div>
+
+            <!-- Sticker Cards Grid -->
+            <div id="stickers-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                <!-- Dynamically Inserted Cards Here -->
+            </div>
+        </div>
+    </section>
+
+    <!-- SELL SECTION (LIST YOUR STICKER) -->
+    <section id="sell-section" class="py-20 bg-principia-navy text-white relative z-20">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="glass-panel p-8 sm:p-12 rounded-3xl border border-white/20 relative overflow-hidden">
+                <div class="absolute -right-16 -bottom-16 w-64 h-64 bg-principia-gold/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <div class="text-center max-w-2xl mx-auto mb-10">
+                    <div class="w-12 h-12 rounded-2xl bg-principia-gold text-principia-navy mx-auto flex items-center justify-center font-bold mb-4 shadow-lg">
+                        <i data-lucide="tag" class="w-6 h-6"></i>
+                    </div>
+                    <h2 class="text-3xl sm:text-4xl font-extrabold text-white tracking-tight">
+                        Sell Your Custom Stickers
+                    </h2>
+                    <p class="text-blue-200 text-sm mt-2">
+                        Are you a Principia student artist? Upload your design, set a price, and start selling to fellow Panthers!
+                    </p>
+                </div>
+
+                <!-- Sell Form -->
+                <form id="sell-sticker-form" onsubmit="handleSellSubmit(event)" class="space-y-6">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">Sticker Title *</label>
+                            <input type="text" id="sell-title" required placeholder="e.g. Principia Panther Mascot" class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-300/50 focus:outline-none focus:border-principia-gold transition-colors text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">Category *</label>
+                            <select id="sell-category" required class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-white/20 text-white focus:outline-none focus:border-principia-gold transition-colors text-sm">
+                                <option value="School Spirit">School Spirit</option>
+                                <option value="Cool Art">Cool Art</option>
+                                <option value="Cute Animals">Cute Animals</option>
+                                <option value="Funny Quotes">Funny Quotes</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">Price ($ USD) *</label>
+                            <input type="number" id="sell-price" min="0.50" step="0.25" value="3.50" required class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white focus:outline-none focus:border-principia-gold transition-colors text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">Finish Type *</label>
+                            <select id="sell-finish" required class="w-full px-4 py-3 rounded-xl bg-slate-800 border border-white/20 text-white focus:outline-none focus:border-principia-gold transition-colors text-sm">
+                                <option value="Matte Vinyl">Matte Vinyl</option>
+                                <option value="Glossy Holographic">Glossy Holographic</option>
+                                <option value="Clear Sticker">Clear Sticker</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">Icon/Design Preview Emoji *</label>
+                        <div class="grid grid-cols-6 sm:grid-cols-8 gap-2" id="emoji-picker">
+                            <!-- Emojis dynamically set -->
+                        </div>
+                        <input type="hidden" id="sell-emoji" value="🐆">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-bold uppercase tracking-wider text-blue-200 mb-2">Description *</label>
+                        <textarea id="sell-desc" rows="3" required placeholder="Describe your sticker, dimensions, theme, etc..." class="w-full px-4 py-3 rounded-xl bg-white/10 border border-white/20 text-white placeholder-blue-300/50 focus:outline-none focus:border-principia-gold transition-colors text-sm"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-4 rounded-xl bg-principia-gold text-principia-navy font-black text-base hover:bg-yellow-300 transition-all shadow-lg hover:shadow-principia-gold/20 flex items-center justify-center gap-2">
+                        <i data-lucide="plus-circle" class="w-5 h-5"></i> Publish Sticker Listing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- SLIDE-OVER SHOPPING CART DRAWER -->
+    <div id="cart-drawer" class="fixed inset-0 z-50 overflow-hidden pointer-events-none transition-opacity duration-300 opacity-0">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto" onclick="toggleCart()"></div>
+
+        <div class="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-auto">
+            <div id="cart-panel" class="w-screen max-w-md bg-white text-slate-900 shadow-2xl flex flex-col justify-between transform translate-x-full transition-transform duration-300 ease-in-out">
+                
+                <!-- Cart Header -->
+                <div class="p-6 bg-principia-navy text-white flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="shopping-bag" class="w-6 h-6 text-principia-gold"></i>
+                        <h3 class="text-xl font-extrabold">Your Sticker Cart</h3>
+                    </div>
+                    <button onclick="toggleCart()" class="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors">
+                        <i data-lucide="x" class="w-6 h-6"></i>
+                    </button>
+                </div>
+
+                <!-- Cart Items List -->
+                <div id="cart-items-container" class="p-6 flex-1 overflow-y-auto space-y-4">
+                    <!-- Dynamic Cart Items -->
+                </div>
+
+                <!-- Cart Footer / Checkout -->
+                <div class="p-6 bg-slate-50 border-t border-slate-200 space-y-4">
+                    <div class="flex justify-between items-center text-sm font-semibold text-slate-600">
+                        <span>Subtotal</span>
+                        <span id="cart-subtotal" class="text-slate-900 font-bold">$0.00</span>
+                    </div>
+                    <div class="flex justify-between items-center text-xs text-slate-500">
+                        <span>Principia School Shipping</span>
+                        <span class="text-green-600 font-bold">FREE On-Campus</span>
+                    </div>
+                    <div class="pt-2 border-t border-slate-200 flex justify-between items-center text-lg font-black text-principia-navy">
+                        <span>Total</span>
+                        <span id="cart-total" class="text-principia-navy">$0.00</span>
+                    </div>
+                    <button onclick="handleCheckout()" class="w-full py-4 rounded-xl bg-principia-gold text-principia-navy font-black text-base hover:bg-yellow-400 transition-all shadow-lg flex items-center justify-center gap-2">
+                        <i data-lucide="check-circle" class="w-5 h-5"></i> Checkout Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- NOTIFICATION TOAST -->
+    <div id="toast-notification" class="fixed bottom-6 right-6 z-50 transform translate-y-24 opacity-0 transition-all duration-300 pointer-events-none">
+        <div class="bg-principia-navy text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-principia-gold flex items-center gap-3">
+            <div id="toast-icon" class="p-1 rounded-full bg-principia-gold text-principia-navy">
+                <i data-lucide="check" class="w-4 h-4"></i>
+            </div>
+            <p id="toast-message" class="text-sm font-semibold">Action completed!</p>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-principia-navy/95 border-t border-white/10 py-8 text-center text-xs text-blue-200/70 relative z-20">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex items-center space-x-2">
+                <div class="w-6 h-6 rounded bg-principia-gold flex items-center justify-center text-principia-navy font-black text-xs">P</div>
+                <span class="font-bold text-white">Principia School Sticker Exchange</span>
+            </div>
+            <p>&copy; 2026 Principia School Spirit Marketplace. Powered by Three.js & Tailwind CSS.</p>
+        </div>
+    </footer>
+
+    <script>
+        /* ----------------------------------------------------
+           1. INITIAL DATA STORE (STICKERS & CART)
+        ---------------------------------------------------- */
+        const initialStickers = [
+            {
+                id: '1',
+                title: 'Principia Panther Pride',
+                category: 'School Spirit',
+                price: 3.50,
+                finish: 'Glossy Holographic',
+                emoji: '🐆',
+                bgGradient: 'from-amber-400 via-principia-gold to-yellow-500',
+                desc: 'Die-cut mascot sticker with shiny metallic gold accents.'
+            },
+            {
+                id: '2',
+                title: 'Solar Panther Geometric',
+                category: 'Cool Art',
+                price: 4.00,
+                finish: 'Matte Vinyl',
+                emoji: '☀️',
+                bgGradient: 'from-blue-600 to-principia-navy',
+                desc: 'Abstract geometric solar design in school gold & blue.'
+            },
+            {
+                id: '3',
+                title: 'Study Hard Panther Cub',
+                category: 'Cute Animals',
+                price: 3.00,
+                finish: 'Clear Sticker',
+                emoji: '🐾',
+                bgGradient: 'from-emerald-400 to-teal-600',
+                desc: 'Adorable panther cub studying with textbooks.'
+            },
+            {
+                id: '4',
+                title: 'Go Panthers! Crest',
+                category: 'School Spirit',
+                price: 3.50,
+                finish: 'Glossy Holographic',
+                emoji: '🏆',
+                bgGradient: 'from-indigo-600 to-principia-navy',
+                desc: 'Classic shield crest sticker for water bottles and laptops.'
+            },
+            {
+                id: '5',
+                title: 'Coffee & 8 AM Classes',
+                category: 'Funny Quotes',
+                price: 2.75,
+                finish: 'Matte Vinyl',
+                emoji: '☕',
+                bgGradient: 'from-orange-400 to-red-500',
+                desc: 'Relatable student sticker for morning coffee lovers.'
+            },
+            {
+                id: '6',
+                title: 'Gold Star Panther',
+                category: 'Cool Art',
+                price: 3.25,
+                finish: 'Glossy Holographic',
+                emoji: '⭐',
+                bgGradient: 'from-yellow-300 via-principia-gold to-amber-500',
+                desc: 'Sparkly gold star icon with custom Principia detailing.'
+            },
+            {
+                id: '7',
+                title: 'Campus Oak Leaf',
+                category: 'Cool Art',
+                price: 3.00,
+                finish: 'Clear Sticker',
+                emoji: '🍃',
+                bgGradient: 'from-green-500 to-emerald-700',
+                desc: 'Inspired by the historic oak trees across campus.'
+            },
+            {
+                id: '8',
+                title: 'Panther Paw Spirit',
+                category: 'School Spirit',
+                price: 3.50,
+                finish: 'Glossy Holographic',
+                emoji: '🐾',
+                bgGradient: 'from-blue-500 to-principia-navy',
+                desc: 'Vibrant paw print with gold border finish.'
+            }
+        ];
+
+        let stickerList = [...initialStickers];
+        let cart = [];
+        let activeCategory = 'All';
+
+        /* Emojis available for selling custom stickers */
+        const emojiOptions = ['🐆', '🐾', '🏆', '⚽', '🎨', '🚀', '⭐', '🔥', '🎓', '⚡', '💙', '📚', '🌲', '🦅', '💻', '✨'];
+
+        /* ----------------------------------------------------
+           2. DOM RENDERING & INTERACTIONS
+        ---------------------------------------------------- */
+        window.addEventListener('DOMContentLoaded', () => {
+            lucide.createIcons();
+            renderEmojiPicker();
+            renderStickerGrid();
+            init3DScene();
+            setupTiltEffect();
+            setupCategoryFilters();
+        });
+
+        // Render Emojis for Sell Form
+        function renderEmojiPicker() {
+            const picker = document.getElementById('emoji-picker');
+            picker.innerHTML = emojiOptions.map((emoji, index) => `
+                <button type="button" onclick="selectEmoji('${emoji}', this)" 
+                        class="emoji-option text-xl p-2 rounded-lg border ${index === 0 ? 'border-principia-gold bg-white/20' : 'border-white/10 hover:bg-white/10'} transition-all text-center">
+                    ${emoji}
+                </button>
+            `).join('');
+        }
+
+        function selectEmoji(emoji, btnEl) {
+            document.getElementById('sell-emoji').value = emoji;
+            document.querySelectorAll('.emoji-option').forEach(b => {
+                b.classList.remove('border-principia-gold', 'bg-white/20');
+                b.classList.add('border-white/10');
+            });
+            btnEl.classList.add('border-principia-gold', 'bg-white/20');
+            btnEl.classList.remove('border-white/10');
+        }
+
+        // Render Sticker Grid with Filters
+        function renderStickerGrid() {
+            const container = document.getElementById('stickers-grid');
+            const filtered = activeCategory === 'All' 
+                ? stickerList 
+                : stickerList.filter(s => s.category === activeCategory);
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full py-12 text-center text-slate-400">
+                        <i data-lucide="tag" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                        <p class="text-base font-semibold">No stickers found in this category yet.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = filtered.map(sticker => `
+                <div class="tilt-card glass-panel-light rounded-2xl p-6 flex flex-col justify-between relative group hover:shadow-2xl cursor-pointer">
+                    <!-- Finish Badge -->
+                    <div class="flex justify-between items-start mb-4 z-10">
+                        <span class="text-[10px] font-black uppercase tracking-wider px-2.5 py-1 rounded-full bg-principia-navy text-white shadow-sm">
+                            ${sticker.category}
+                        </span>
+                        <span class="text-xs font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                            ${sticker.finish}
+                        </span>
+                    </div>
+
+                    <!-- Sticker Visual Die-Cut Canvas/Icon -->
+                    <div class="my-6 flex items-center justify-center py-8 rounded-2xl bg-gradient-to-br ${sticker.bgGradient} relative holo-effect shadow-inner overflow-hidden border border-white/20">
+                        <div class="text-6xl sm:text-7xl sticker-diecut transform group-hover:scale-110 transition-transform">
+                            ${sticker.emoji}
+                        </div>
+                    </div>
+
+                    <!-- Sticker Details -->
+                    <div class="tilt-content space-y-2">
+                        <h3 class="font-extrabold text-slate-900 text-lg leading-tight group-hover:text-principia-navy transition-colors">
+                            ${sticker.title}
+                        </h3>
+                        <p class="text-xs text-slate-500 line-clamp-2">${sticker.desc}</p>
+                        
+                        <div class="pt-4 flex items-center justify-between border-t border-slate-100 mt-4">
+                            <div>
+                                <span class="text-xs text-slate-400 font-medium block">Price</span>
+                                <span class="text-xl font-black text-principia-navy">$${sticker.price.toFixed(2)}</span>
+                            </div>
+                            <button onclick="addToCart('${sticker.id}')" class="px-4 py-2.5 rounded-xl bg-principia-gold hover:bg-yellow-400 text-principia-navy font-extrabold text-xs flex items-center gap-1.5 shadow-md active:scale-95 transition-all">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            lucide.createIcons();
+            setupTiltEffect();
+        }
+
+        // Category Filter Functionality
+        function setupCategoryFilters() {
+            const buttons = document.querySelectorAll('#category-filters .filter-btn');
+            buttons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    buttons.forEach(b => {
+                        b.classList.remove('bg-principia-navy', 'text-white', 'shadow-md');
+                        b.classList.add('bg-white', 'text-slate-600', 'hover:bg-slate-200');
+                    });
+                    btn.classList.remove('bg-white', 'text-slate-600', 'hover:bg-slate-200');
+                    btn.classList.add('bg-principia-navy', 'text-white', 'shadow-md');
+
+                    activeCategory = btn.getAttribute('data-category');
+                    renderStickerGrid();
+                });
+            });
+        }
+
+        /* ----------------------------------------------------
+           3. 3D CARD TILT EFFECT (CSS & JS INTERACTION)
+        ---------------------------------------------------- */
+        function setupTiltEffect() {
+            const cards = document.querySelectorAll('.tilt-card');
+            cards.forEach(card => {
+                card.addEventListener('mousemove', (e) => {
+                    const rect = card.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+
+                    const rotateX = ((y - centerY) / centerY) * -12;
+                    const rotateY = ((x - centerX) / centerX) * 12;
+
+                    card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+                });
+
+                card.addEventListener('mouseleave', () => {
+                    card.style.transform = `perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
+                });
+            });
+        }
+
+        /* ----------------------------------------------------
+           4. THREE.JS 3D HERO CAROUSEL / DISPLAY
+        ---------------------------------------------------- */
+        let scene, camera, renderer, stickerMeshGroup;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+
+        function init3DScene() {
+            const container = document.getElementById('three-container');
+            
+            scene = new THREE.Scene();
+            
+            // Camera Setup
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.z = 7;
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+
+            const dirLight1 = new THREE.DirectionalLight(0xFFC72C, 1.5); // Principia Gold Light
+            dirLight1.position.set(5, 5, 5);
+            scene.add(dirLight1);
+
+            const dirLight2 = new THREE.DirectionalLight(0x00205B, 1.2); // Navy Blue Backlight
+            dirLight2.position.set(-5, -5, -2);
+            scene.add(dirLight2);
+
+            // Main Sticker Group
+            stickerMeshGroup = new THREE.Group();
+            scene.add(stickerMeshGroup);
+
+            // Create 3D Floating Sticker Badge
+            create3DStickerMesh();
+
+            // Render Loop
+            function animate() {
+                requestAnimationFrame(animate);
+
+                if (!isDragging) {
+                    stickerMeshGroup.rotation.y += 0.005;
+                    stickerMeshGroup.position.y = Math.sin(Date.now() * 0.0015) * 0.15;
+                }
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Interactive Controls
+            setup3DControls(container);
+
+            // Window Resize Listener
+            window.addEventListener('resize', () => {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            });
+        }
+
+        // Build 3D Die-Cut Sticker Model
+        function create3DStickerMesh() {
+            // Main Plate (Front & Back)
+            const geometry = new THREE.CylinderGeometry(2, 2, 0.1, 64);
+            
+            // Materials
+            const goldMaterial = new THREE.MeshStandardMaterial({
+                color: 0xFFC72C,
+                metalness: 0.8,
+                roughness: 0.2,
+            });
+
+            const navyMaterial = new THREE.MeshStandardMaterial({
+                color: 0x00205B,
+                metalness: 0.3,
+                roughness: 0.4
+            });
+
+            const whiteBorderMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffffff,
+                roughness: 0.1
+            });
+
+            // Base Disc
+            const disc = new THREE.Mesh(geometry, [goldMaterial, whiteBorderMaterial, navyMaterial]);
+            disc.rotation.x = Math.PI / 2;
+            stickerMeshGroup.add(disc);
+
+            // Inner Ring Accent
+            const ringGeo = new THREE.TorusGeometry(1.7, 0.04, 16, 100);
+            const ring = new THREE.Mesh(ringGeo, goldMaterial);
+            ring.position.z = 0.06;
+            stickerMeshGroup.add(ring);
+
+            // Floating Background Orbiting Mini-Stickers
+            for (let i = 0; i < 6; i++) {
+                const miniGeo = new THREE.BoxGeometry(0.3, 0.3, 0.05);
+                const miniMat = new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0xFFC72C : 0xffffff });
+                const miniMesh = new THREE.Mesh(miniGeo, miniMat);
+
+                const angle = (i / 6) * Math.PI * 2;
+                miniMesh.position.x = Math.cos(angle) * 3.2;
+                miniMesh.position.y = Math.sin(angle) * 3.2;
+                miniMesh.rotation.z = Math.random() * Math.PI;
+
+                stickerMeshGroup.add(miniMesh);
+            }
+        }
+
+        function setup3DControls(container) {
+            container.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            window.addEventListener('mouseup', () => { isDragging = false; });
+
+            container.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+
+                const deltaMove = {
+                    x: e.clientX - previousMousePosition.x,
+                    y: e.clientY - previousMousePosition.y
+                };
+
+                stickerMeshGroup.rotation.y += deltaMove.x * 0.008;
+                stickerMeshGroup.rotation.x += deltaMove.y * 0.008;
+
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+
+            // Touch events for mobile 3D interaction
+            container.addEventListener('touchstart', (e) => {
+                if (e.touches.length === 1) {
+                    isDragging = true;
+                    previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+                }
+            });
+
+            container.addEventListener('touchmove', (e) => {
+                if (!isDragging || e.touches.length !== 1) return;
+                const deltaMove = {
+                    x: e.touches[0].clientX - previousMousePosition.x,
+                    y: e.touches[0].clientY - previousMousePosition.y
+                };
+
+                stickerMeshGroup.rotation.y += deltaMove.x * 0.008;
+                stickerMeshGroup.rotation.x += deltaMove.y * 0.008;
+
+                previousMousePosition = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            });
+
+            window.addEventListener('touchend', () => { isDragging = false; });
+
+            // Button Rotate Controls
+            document.getElementById('rotate-left-btn').addEventListener('click', () => {
+                stickerMeshGroup.rotation.y -= 0.5;
+            });
+            document.getElementById('rotate-right-btn').addEventListener('click', () => {
+                stickerMeshGroup.rotation.y += 0.5;
+            });
+        }
+
+        /* ----------------------------------------------------
+           5. CART MANAGEMENT LOGIC
+        ---------------------------------------------------- */
+        function toggleCart() {
+            const drawer = document.getElementById('cart-drawer');
+            const panel = document.getElementById('cart-panel');
+            
+            const isOpen = !drawer.classList.contains('opacity-0');
+
+            if (isOpen) {
+                panel.classList.add('translate-x-full');
+                drawer.classList.add('opacity-0');
+                setTimeout(() => drawer.classList.add('pointer-events-none'), 300);
+            } else {
+                drawer.classList.remove('pointer-events-none', 'opacity-0');
+                panel.classList.remove('translate-x-full');
+            }
+        }
+
+        function addToCart(stickerId) {
+            const item = stickerList.find(s => s.id === stickerId);
+            if (!item) return;
+
+            const existing = cart.find(c => c.id === stickerId);
+            if (existing) {
+                existing.quantity += 1;
+            } else {
+                cart.push({ ...item, quantity: 1 });
+            }
+
+            updateCartUI();
+            showToast(`Added "${item.title}" to your cart!`);
+        }
+
+        function updateQuantity(stickerId, delta) {
+            const item = cart.find(c => c.id === stickerId);
+            if (!item) return;
+
+            item.quantity += delta;
+            if (item.quantity <= 0) {
+                cart = cart.filter(c => c.id !== stickerId);
+            }
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            const container = document.getElementById('cart-items-container');
+            const badge = document.getElementById('cart-count-badge');
+            const subtotalEl = document.getElementById('cart-subtotal');
+            const totalEl = document.getElementById('cart-total');
+
+            const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
+            const totalCost = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+
+            // Badge
+            if (totalCount > 0) {
+                badge.innerText = totalCount;
+                badge.classList.remove('hidden');
+            } else {
+                badge.classList.add('hidden');
+            }
+
+            // Items List
+            if (cart.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-16 text-slate-400">
+                        <i data-lucide="shopping-cart" class="w-12 h-12 mx-auto mb-3 opacity-30"></i>
+                        <p class="text-sm font-semibold">Your sticker cart is empty.</p>
+                        <a href="#buy-section" onclick="toggleCart()" class="mt-4 inline-block text-xs font-bold text-principia-navy underline">Browse Stickers</a>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = cart.map(item => `
+                    <div class="flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-12 h-12 rounded-lg bg-gradient-to-tr ${item.bgGradient} flex items-center justify-center text-2xl shadow-sm">
+                                ${item.emoji}
+                            </div>
+                            <div>
+                                <h4 class="font-extrabold text-xs text-slate-900 leading-tight">${item.title}</h4>
+                                <span class="text-[10px] text-slate-500">$${item.price.toFixed(2)} each</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateQuantity('${item.id}', -1)" class="w-6 h-6 rounded bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-xs font-bold">-</button>
+                            <span class="text-xs font-extrabold text-slate-800 w-4 text-center">${item.quantity}</span>
+                            <button onclick="updateQuantity('${item.id}', 1)" class="w-6 h-6 rounded bg-slate-200 hover:bg-slate-300 flex items-center justify-center text-xs font-bold">+</button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+
+            subtotalEl.innerText = `$${totalCost.toFixed(2)}`;
+            totalEl.innerText = `$${totalCost.toFixed(2)}`;
+
+            lucide.createIcons();
+        }
+
+        function handleCheckout() {
+            if (cart.length === 0) {
+                showToast('Your cart is empty!');
+                return;
+            }
+            showToast('Order submitted! Pickup at Principia Student Center.');
+            cart = [];
+            updateCartUI();
+            toggleCart();
+        }
+
+        /* ----------------------------------------------------
+           6. SELL STICKER FORM SUBMISSION
+        ---------------------------------------------------- */
+        function handleSellSubmit(event) {
+            event.preventDefault();
+
+            const title = document.getElementById('sell-title').value.trim();
+            const category = document.getElementById('sell-category').value;
+            const price = parseFloat(document.getElementById('sell-price').value);
+            const finish = document.getElementById('sell-finish').value;
+            const emoji = document.getElementById('sell-emoji').value;
+            const desc = document.getElementById('sell-desc').value.trim();
+
+            const gradients = [
+                'from-amber-400 to-yellow-500',
+                'from-blue-600 to-principia-navy',
+                'from-emerald-400 to-teal-600',
+                'from-indigo-600 to-purple-700',
+                'from-orange-400 to-red-500'
+            ];
+            const randomGradient = gradients[Math.floor(Math.random() * gradients.length)];
+
+            const newSticker = {
+                id: Date.now().toString(),
+                title,
+                category,
+                price,
+                finish,
+                emoji,
+                bgGradient: randomGradient,
+                desc
+            };
+
+            // Add to marketplace array
+            stickerList.unshift(newSticker);
+            
+            // Re-render
+            renderStickerGrid();
+            
+            // Reset Form
+            document.getElementById('sell-sticker-form').reset();
+            
+            // Notify user
+            showToast('Your custom sticker design is now listed!');
+            
+            // Scroll to Marketplace
+            scrollToSection('buy-section');
+        }
+
+        /* ----------------------------------------------------
+           7. UTILITY HELPERS
+        ---------------------------------------------------- */
+        function showToast(message) {
+            const toast = document.getElementById('toast-notification');
+            const msgEl = document.getElementById('toast-message');
+            
+            msgEl.innerText = message;
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            
+            setTimeout(() => {
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 3000);
+        }
+
+        function scrollToSection(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                el.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+    </script>
+</body>
+</html>
